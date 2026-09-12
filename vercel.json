@@ -1,7 +1,6 @@
 {
-  "version": 2,
-  "buildCommand": "cd backend && npx prisma generate && cd ../frontend && npm run build",
-  "outputDirectory": "frontend/.next",
+  "buildCommand": "npx prisma generate --schema=../backend/prisma/schema.prisma && next build",
+  "installCommand": "npm install --legacy-peer-deps",
   "rewrites": [
     {
       "source": "/api/(.*)",
