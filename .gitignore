@@ -1,0 +1,33 @@
+# Node modules
+node_modules/
+*/node_modules/
+
+# Build outputs
+dist/
+frontend/.next/
+frontend/out/
+
+# Environment files (IMPORTANT: never commit these)
+.env
+.env.local
+.env.production
+backend/.env
+
+# Database files (don't commit local DB - Render will create its own)
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Scratch / temp
+scratch/

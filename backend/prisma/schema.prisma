@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Bus {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  contactNo String?
+  isActive  Boolean  @default(true)
+  routes    Route[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Route {
+  id         String         @id @default(cuid())
+  name       String
+  busId      String
+  bus        Bus            @relation(fields: [busId], references: [id])
+  isActive   Boolean        @default(true)
+  trips      Trip[]
+  polyline   RoutePolyline?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([name, busId])
+  @@index([busId])
+}
+
+model Stop {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  nameBn    String?
+  lat       Float?
+  lng       Float?
+  aliases   StopAlias[]
+  tripStops TripStop[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([name])
+}
+
+model StopAlias {
+  id     String @id @default(cuid())
+  alias  String
+  stopId String
+  stop   Stop   @relation(fields: [stopId], references: [id], onDelete: Cascade)
+
+  @@unique([alias, stopId])
+  @@index([alias])
+}
+
+model Trip {
+  id        String     @id @default(cuid())
+  routeId   String
+  route     Route      @relation(fields: [routeId], references: [id])
+  isActive  Boolean    @default(true)
+  stops     TripStop[]
+  delays    Delay[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([routeId])
+}
+
+model TripStop {
+  id            String   @id @default(cuid())
+  tripId        String
+  trip          Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  stopId        String
+  stop          Stop     @relation(fields: [stopId], references: [id])
+  sequence      Int
+  scheduledTime String   // HH:mm format (24h)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tripId, sequence])
+  @@unique([tripId, stopId])
+  @@index([tripId])
+  @@index([stopId])
+  @@index([sequence])
+}
+
+model Delay {
+  id           String    @id @default(cuid())
+  tripId       String
+  trip         Trip      @relation(fields: [tripId], references: [id])
+  delayMinutes Int       @default(0)
+  reason       String?
+  setAt        DateTime  @default(now())
+  expiresAt    DateTime?
+
+  @@index([tripId])
+}
+
+model RoutePolyline {
+  id       String @id @default(cuid())
+  routeId  String @unique
+  route    Route  @relation(fields: [routeId], references: [id])
+  geoJson  String // JSON String
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?
+  phone     String?
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
