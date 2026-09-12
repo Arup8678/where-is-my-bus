@@ -18,12 +18,6 @@ import adminImportRouter from './routes/admin/import';
 import adminDashboardRouter from './routes/admin/dashboard';
 import feedbackRouter from './routes/feedback';
 
-try {
-  require('dotenv').config();
-} catch (e) {
-  // dotenv not needed in Next.js environment
-}
-
 const app = express();
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
