@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorHandler';
 
 import stopsRouter from './routes/stops';
@@ -19,7 +18,11 @@ import adminImportRouter from './routes/admin/import';
 import adminDashboardRouter from './routes/admin/dashboard';
 import feedbackRouter from './routes/feedback';
 
-dotenv.config();
+try {
+  require('dotenv').config();
+} catch (e) {
+  // dotenv not needed in Next.js environment
+}
 
 const app = express();
 
