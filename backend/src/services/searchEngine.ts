@@ -72,13 +72,17 @@ export class SearchEngine {
 
       for (const fs of fromStops) {
         for (const ts of toStops) {
-          // Departure stop sequence must come BEFORE arrival stop sequence
+          // Ensure departure stop comes before arrival stop
           if (fs.sequence < ts.sequence) {
             const delayMinutes = trip.delays[0]?.delayMinutes || 0;
             const loc = LocationEngine.getCurrentLocation(trip, delayMinutes);
 
+            // Skip trips that are already completed
+            if (loc.status === 'COMPLETED') continue;
+
             results.push({
               tripId: trip.id,
+              busId: trip.route.bus.id,
               busName: trip.route.bus.name,
               routeName: trip.route.name,
               contactNo: trip.route.bus.contactNo,
@@ -95,19 +99,35 @@ export class SearchEngine {
       }
     }
 
-    // Deduplicate results by tripId
-    const uniqueResultsMap = new Map();
+    // Deduplicate results by bus (busId) and keep the most "final" status.
+    // Status priority: COMPLETED > DELAYED > RUNNING > NOT_STARTED.
+    const statusPriority = (status) => {
+      switch (status) {
+        case 'COMPLETED': return 4;
+        case 'DELAYED': return 3;
+        case 'RUNNING': return 2;
+        case 'NOT_STARTED': return 1;
+        default: return 0;
+      }
+    };
+    const dedupMap = new Map(); // key = busId (unique identifier)
     for (const item of results) {
-      if (!uniqueResultsMap.has(item.tripId)) {
-        uniqueResultsMap.set(item.tripId, item);
+      const key = item.busId || item.busName; // fallback to name if id missing
+      if (!dedupMap.has(key)) {
+        dedupMap.set(key, item);
+      } else {
+        const existing = dedupMap.get(key);
+        // Prefer higher status priority; if equal, keep earlier departure time
+        if (
+          statusPriority(item.status) > statusPriority(existing.status) ||
+          (statusPriority(item.status) === statusPriority(existing.status) &&
+            item.fromStop.scheduledTime < existing.fromStop.scheduledTime)
+        ) {
+          dedupMap.set(key, item);
+        }
       }
     }
-    const uniqueResults = Array.from(uniqueResultsMap.values());
+    const uniqueResults = Array.from(dedupMap.values());
 
     // Sort buses by departure time (earliest first)
-    return uniqueResults.sort((a, b) => {
-      return a.fromStop.scheduledTime.localeCompare(b.fromStop.scheduledTime);
-    });
-  }
-}
-
+    return uniqueResults.sort((a, b) => a.fromStop.scheduledTime.localeCompare(b.fromStop.scheduledTime));
