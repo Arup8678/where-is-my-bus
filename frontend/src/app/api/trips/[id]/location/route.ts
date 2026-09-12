@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '../../../../../../../backend/src/lib/prisma';
+import prisma from '@/lib/prisma';
 import { LocationEngine } from '../../ '../../../../../backend/src/services/locationEngine';
 
 export const dynamic = 'force-dynamic';

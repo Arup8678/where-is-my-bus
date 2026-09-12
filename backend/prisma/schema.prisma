@@ -1,9 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-}
-
-generator frontendClient {
-  provider = "prisma-client-js"
   output   = "../../frontend/node_modules/.prisma/client"
 }
 
@@ -131,4 +127,3 @@ model Feedback {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
