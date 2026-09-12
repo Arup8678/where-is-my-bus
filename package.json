@@ -1,8 +1,0 @@
-{
-  "name": "where-is-my-bus",
-  "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "next": "^15.1.7"
-  }
-}
