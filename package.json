@@ -1,0 +1,13 @@
+{
+  "name": "where-is-my-bus",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "build": "cd backend && npx prisma generate && cd ../frontend && npm run build",
+    "dev": "cd frontend && npm run dev"
+  }
+}
