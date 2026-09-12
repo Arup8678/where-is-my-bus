@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "outputDirectory": ".next",
   "buildCommand": "npx prisma generate --schema=../backend/prisma/schema.prisma && next build",
   "installCommand": "npm install --legacy-peer-deps"
 }
