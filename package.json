@@ -2,15 +2,7 @@
   "name": "where-is-my-bus",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
   "dependencies": {
     "next": "15.1.0"
-  },
-  "scripts": {
-    "build": "cd backend && npx prisma generate && cd ../frontend && npm run build",
-    "dev": "cd frontend && npm run dev"
   }
 }
