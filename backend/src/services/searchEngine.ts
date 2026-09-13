@@ -74,9 +74,8 @@ export class SearchEngine {
             // Determine status for this particular segment
             const passedIds = loc.passedStops.map((p: any) => p.stopId);
             let segmentStatus: string;
-            if (passedIds.includes(ts.stopId)) {
-              // Destination already passed – skip this segment
-              continue;
+            if (passedIds.includes(ts.stopId) || loc.status === BusStatus.COMPLETED) {
+              segmentStatus = BusStatus.COMPLETED;
             } else if (passedIds.includes(fs.stopId)) {
               segmentStatus = delayMinutes > 0 ? BusStatus.DELAYED : BusStatus.RUNNING;
             } else {
