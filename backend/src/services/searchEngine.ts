@@ -1,6 +1,6 @@
 import prisma from '../lib/prisma';
 import { LocationEngine } from './locationEngine';
-import { BusStatus } from '../../shared/types';
+import { BusStatus } from '../types/shared';
 
 // Alias dictionary for stop name variations
 const STOP_ALIASES: Record<string, string[]> = {
@@ -30,7 +30,7 @@ function matchStop(stopObj: any, query: string): boolean {
   if (sBn && (sBn.includes(q) || q.includes(sBn))) return true;
 
   // Check alias dictionary
-  for (const [_, aliases] of Object.entries(STOP_ALIASES)) {
+  for (const [, aliases] of Object.entries(STOP_ALIASES)) {
     if (aliases.some(a => a.includes(q) || q.includes(a))) {
       if (aliases.some(a => sName.includes(a))) return true;
     }
@@ -48,14 +48,11 @@ export class SearchEngine {
     const qFrom = from.toLowerCase().trim();
     const qTo = to.toLowerCase().trim();
 
-    // Fetch all active trips with stops and related data
+    // Load all active trips with related data
     const trips = await prisma.trip.findMany({
       where: { isActive: true },
       include: {
-        stops: {
-          include: { stop: { include: { aliases: true } } },
-          orderBy: { sequence: 'asc' },
-        },
+        stops: { include: { stop: { include: { aliases: true } } }, orderBy: { sequence: 'asc' } },
         route: { include: { bus: true } },
         delays: { where: { expiresAt: null }, take: 1, orderBy: { setAt: 'desc' } },
       },
@@ -69,16 +66,22 @@ export class SearchEngine {
 
       for (const fs of fromStops) {
         for (const ts of toStops) {
-          // Ensure the departure stop appears before the arrival stop in the sequence
+          // Departure must be before arrival in the sequence
           if (fs.sequence < ts.sequence) {
             const delayMinutes = trip.delays[0]?.delayMinutes || 0;
-            const loc = LocationEngine.getCurrentLocation(trip, delayMinutes);
+            const loc = LocationEngine.getCurrentLocation(trip as any, delayMinutes);
 
-            // Do not return trips that are already completed
-            if (loc.status === BusStatus.COMPLETED) continue;
-
-            // Map NOT_STARTED to ESTIMATED so the UI shows an upcoming bus
-            const status = loc.status === BusStatus.NOT_STARTED ? BusStatus.ESTIMATED : loc.status;
+            // Determine status for this particular segment
+            const passedIds = loc.passedStops.map((p: any) => p.stopId);
+            let segmentStatus: string;
+            if (passedIds.includes(ts.stopId)) {
+              // Destination already passed – skip this segment
+              continue;
+            } else if (passedIds.includes(fs.stopId)) {
+              segmentStatus = delayMinutes > 0 ? BusStatus.DELAYED : BusStatus.RUNNING;
+            } else {
+              segmentStatus = BusStatus.ESTIMATED;
+            }
 
             results.push({
               tripId: trip.id,
@@ -88,7 +91,7 @@ export class SearchEngine {
               contactNo: trip.route.bus.contactNo,
               fromStop: { ...fs, stopName: fs.stop.name, stopNameBn: fs.stop.nameBn },
               toStop: { ...ts, stopName: ts.stop.name, stopNameBn: ts.stop.nameBn },
-              status,
+              status: segmentStatus,
               locationSource: loc.locationSource,
               estimatedLocation: loc.currentLocation,
               delayMinutes,
@@ -99,8 +102,7 @@ export class SearchEngine {
       }
     }
 
-    // Deduplicate by bus (busId) + direction (fromStop → toStop)
-    // Keep the entry with the highest status priority; if equal, keep the earlier departure time.
+    // Deduplicate by bus (busId) + direction (from → to)
     const statusPriority = (status: string) => {
       switch (status) {
         case BusStatus.COMPLETED:
