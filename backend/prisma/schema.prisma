@@ -1,5 +1,9 @@
 generator client {
   provider = "prisma-client-js"
+}
+
+generator client_frontend {
+  provider = "prisma-client-js"
   output   = "../../frontend/node_modules/.prisma/client"
 }
 
